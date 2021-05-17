@@ -26,7 +26,7 @@ namespace lab3
         static Matrix<double> P_prev;
         static Matrix<double> P_extr;
         static Matrix<double> R;
-        //static Matrix<double> Q;
+        static Matrix<double> Q;
         static Matrix<double> I;
         static Matrix<double> K;
         static int steps, Xmax, Ymax, delta_t = 1;
@@ -77,8 +77,8 @@ namespace lab3
 
                 //экстраполяция состояния
                 u = Vector<double>.Build.DenseOfArray(new[] {v[i][0], v[i][1] });
-                F = Calculate_F(v[i - 1], x[i - 1]);
-                B = Calculate_B(x[i - 1]);
+                F = Calculate_F(v[i], x[i]);
+                B = Calculate_B(x[i]);
                 Vector<double>  x_ht = (F * x[i - 1]) + (B * u);
                 x_extr.Add(x_ht);
 
@@ -87,28 +87,29 @@ namespace lab3
                 P_extr = F * P_prev * F.Transpose();
 
                 //Усиление по Калману
-                H = Calculate_H(x[i - 1], A);
+                H = Calculate_H(x[i], A);
                 K = P_extr * H.Transpose() * (H * P_extr * H.Transpose() + R).Inverse();
 
                 //Коррекция вектора состояния
-                Vector<double> z_k = Calculate_z(A, x[i - 1]);
+                Vector<double> z_k = Calculate_z(A, x[i]);
                 Vector<double> x_n = x_ht + K * (z_k - H * x_ht);
-                x.Add(x_n);
+                x_correct.Add(x_n);
 
                 //Расчет матрицы ковариации
                 P = (I - K * H) * P_extr;
             }
             Save_file(steps, A);
-            Console.WriteLine("Запуск окна с графиком.");
-            ProcessStartInfo startInfo = new ProcessStartInfo("python");
-            Process process = new Process();
-            startInfo.Arguments = "main.py";
-            startInfo.UseShellExecute = false;
-            startInfo.CreateNoWindow = true;
-            startInfo.RedirectStandardError = true;
-            startInfo.RedirectStandardOutput = true;
-            process.StartInfo = startInfo;
-            process.Start();
+            Print(steps);
+            //Console.WriteLine("Запуск окна с графиком.");
+            //ProcessStartInfo startInfo = new ProcessStartInfo("python");
+            //Process process = new Process();
+            //startInfo.Arguments = "main.py";
+            //startInfo.UseShellExecute = false;
+            //startInfo.CreateNoWindow = true;
+            //startInfo.RedirectStandardError = true;
+            //startInfo.RedirectStandardOutput = true;
+            //process.StartInfo = startInfo;
+            //process.Start();
             Console.ReadKey();
         }
 
@@ -116,7 +117,7 @@ namespace lab3
             Random random = new Random();
             for (int i = 1; i < cnt; i++){
                 Vector<double> m_r = Vector<double>.Build.Dense(2);
-                //Vector<double> a = Vector<double>.Build.Dense(3);
+                Vector<double> a = Vector<double>.Build.Dense(3);
                 while (true){
                     m_r[0] = random.NextDouble() * v_max;
                     if (Math.Abs(m_r[0] - v[i - 1][0]) < v[i - 1][0] * 0.1){
@@ -130,13 +131,15 @@ namespace lab3
                         break;
                     }
                 }
-                //a[0] = Xmax * random.NextDouble();
-                //a[1] = Ymax * random.NextDouble();
-                //a[2] = random.NextDouble();
-                //x.Add(a);
+                a[0] = Xmax * random.NextDouble();
+                a[1] = Ymax * random.NextDouble();
+                a[2] = random.NextDouble();
+                x.Add(a);
             }
             P = Calculate_P(Xmax, Ymax);
             R = Calculate_R(Xmax, Ymax);
+            Q = R;
+            x_correct.Add(x[0]);
             I = Matrix<double>.Build.DenseIdentity(3);
         }
 
@@ -245,6 +248,17 @@ namespace lab3
                     sw.Close();
                     Console.WriteLine("Данные записаны.");
                 }
+            }
+        }
+
+        static void Print(int N){
+            string row;
+            Console.WriteLine("x_extr            |  y_extr            |  tetta_extr         |  x_corr            |  y_corr            |  tetta_corr");
+            for (int i = 1; i < N - 1; i++){
+                row = Convert.ToString(x_extr[i - 1][0]) + "  |  " + Convert.ToString(x_extr[i - 1][1]) + "  |  " +
+                      Convert.ToString(x_extr[i - 1][2]) + "  |  " + Convert.ToString(x_correct[i][0]) + "  |  " +
+                      Convert.ToString(x_correct[i][1]) + "  |  " + Convert.ToString(x_correct[i][2]);
+                Console.WriteLine(row);
             }
         }
     }
