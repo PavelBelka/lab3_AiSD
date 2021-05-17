@@ -84,7 +84,7 @@ namespace lab3
 
                 //экстраполяция матрицы ковариации
                 P_prev = P;
-                P_extr = F * P_prev * F.Transpose();
+                P_extr = F * P_prev * F.Transpose() + Q;
 
                 //Усиление по Калману
                 H = Calculate_H(x[i], A);
@@ -138,7 +138,7 @@ namespace lab3
             }
             P = Calculate_P(Xmax, Ymax);
             R = Calculate_R(Xmax, Ymax);
-            Q = R;
+            Q = P;
             x_correct.Add(x[0]);
             I = Matrix<double>.Build.DenseIdentity(3);
         }
@@ -178,7 +178,7 @@ namespace lab3
             Matrix<double> calc;
             double sigma2_x = Math.Pow(xmax / 6, 2);
             double sigma2_y = Math.Pow(ymax / 6, 2);
-            double sigma2_tetta = Math.Pow(Math.PI / 3, 2);
+            double sigma2_tetta = Math.Pow(Math.PI, 2) / 9;
             calc = Matrix<double>.Build.DenseOfArray(new[,] {{sigma2_x, 0, 0},
                                                              {0, sigma2_y, 0},
                                                              {0, 0, sigma2_tetta}});
